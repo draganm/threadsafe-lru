@@ -34,8 +34,8 @@ Or install it yourself as:
 ## Thread safety
 
 	There are two level of locking within the cache.
-	Cache lock makes sure that cache structure can be accessed only by one thread at the time
-	Value lock makes sure that only one thread produces a value for given key at the time. 
+	* Cache lock makes sure that cache structure can be accessed only by one thread at the time.
+	* Value lock makes sure that only one thread produces a value for given key at the time. 
 	All other threads interested in obtaining the value for the key are waiting for the first thread to finish
 	
 ## Testing
