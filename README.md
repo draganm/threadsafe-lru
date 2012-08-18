@@ -23,7 +23,7 @@ Or install it yourself as:
 	fib_cache=ThreadSafeLru::LruCache.new 200
 
 	# fetch fibonacci of 42 from cache. only first execution will perform computation (evaluate block)	
-	fib_200 =cache.get(42) {|key| fib(key)}
+	fib_200 =fib_cache.get(42) {|key| fib(key)}
 	
 	# drop key 42 from the cache
 	fib_cache.drop(42)
