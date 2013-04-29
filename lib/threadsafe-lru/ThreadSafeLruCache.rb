@@ -1,4 +1,5 @@
 require 'thread'
+require 'threadsafe-lru/DoubleLinkedList'
 
 module ThreadSafeLru
   class LruCache
@@ -6,19 +7,20 @@ module ThreadSafeLru
       @size=size
       @cached_values={}
       @factory_block=block
-      @recently_used=[]
+      @recently_used=ThreadSafeLru::DoubleLinkedList.new
       @lock=Mutex.new
     end
 
     def size
-      @recently_used.size
+      @cached_values.size
     end
 
     
     def drop key
       @lock.synchronize do
-        @cached_values.delete key
-        @recently_used.delete key
+        node=@cached_values.delete key
+        node.remove if node
+          
       end
     end
       
@@ -42,19 +44,18 @@ module ThreadSafeLru
 
     def get_node key
       if @cached_values.has_key?(key)
-        @recently_used.delete(key)
-        @recently_used << key
+        dll_node=@cached_values[key]
+        @recently_used.bump_to_top dll_node
       else
-        while (@recently_used.size >= @size) do
-          dropped=@recently_used.shift
-          @cached_values.delete(dropped)
+        while (size >= @size) do
+          dropped=@recently_used.remove_last
+          @cached_values.delete(dropped.value.key)
         end
         node=Node.new key
-        @cached_values[key]=node
-        @recently_used << key
+        dll_node=@recently_used.add_to_head node
+        @cached_values[key]=dll_node        
       end
-
-      @cached_values[key]
+      @cached_values[key].value
     end
 
   end
@@ -66,6 +67,8 @@ module ThreadSafeLru
       @value=nil
       @lock=Mutex.new
     end
+
+    attr_reader :key
 
     def get_value block
       @lock.synchronize do
